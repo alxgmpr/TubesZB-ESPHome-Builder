@@ -104,17 +104,15 @@ interval:
   - interval: 60s
     then:
       - lambda: |-
-          static uint32_t last_byte_count = 0;
           static uint32_t stall_count = 0;
-          uint32_t current = id(uart_bus).get_rx_byte_count();
           if (!id(serial_watchdog_enabled).state) {
             stall_count = 0;
             return;
           }
-          if (current == last_byte_count) {
+          if (!id(serial_connected).state) {
             stall_count++;
             if (stall_count >= 5 && id(watchdog_reboot_count) < 3) {
-              ESP_LOGW("watchdog", "Serial stall detected (%d consecutive), rebooting (attempt %d/3)",
+              ESP_LOGW("watchdog", "No serial client for %d min, rebooting (attempt %d/3)",
                        stall_count, id(watchdog_reboot_count) + 1);
               id(watchdog_reboot_count) += 1;
               App.safe_reboot();
@@ -127,7 +125,6 @@ interval:
               id(watchdog_reboot_count) = 0;
             }
           }
-          last_byte_count = current;
 
 uart:
   id: uart_bus
@@ -144,6 +141,7 @@ stream_server:
 binary_sensor:
   - platform: stream_server
     connected:
+      id: serial_connected
       name: "TubesZB ZW Serial Connected"
 
 sensor:
