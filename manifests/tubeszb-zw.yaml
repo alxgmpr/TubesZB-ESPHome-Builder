@@ -82,9 +82,52 @@ web_server:
   js_url: "https://tube0013.github.io/TubesZB-ESPHome-Builder/common/www.js"
 
 
+globals:
+  - id: watchdog_reboot_count
+    type: int
+    restore_value: true
+    initial_value: '0'
+
 button:
   - platform: restart
     name: "Restart the ESP32 Device"
+
+switch:
+  - platform: template
+    name: "Serial Watchdog"
+    id: serial_watchdog_enabled
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+    entity_category: config
+
+interval:
+  - interval: 60s
+    then:
+      - lambda: |-
+          static uint32_t last_byte_count = 0;
+          static uint32_t stall_count = 0;
+          uint32_t current = id(uart_bus).get_rx_byte_count();
+          if (!id(serial_watchdog_enabled).state) {
+            stall_count = 0;
+            return;
+          }
+          if (current == last_byte_count) {
+            stall_count++;
+            if (stall_count >= 5 && id(watchdog_reboot_count) < 3) {
+              ESP_LOGW("watchdog", "Serial stall detected (%d consecutive), rebooting (attempt %d/3)",
+                       stall_count, id(watchdog_reboot_count) + 1);
+              id(watchdog_reboot_count) += 1;
+              App.safe_reboot();
+            } else if (id(watchdog_reboot_count) >= 3) {
+              ESP_LOGE("watchdog", "Max reboots reached (3), watchdog disabled until manual reset");
+            }
+          } else {
+            stall_count = 0;
+            if (id(watchdog_reboot_count) > 0) {
+              id(watchdog_reboot_count) = 0;
+            }
+          }
+          last_byte_count = current;
 
 uart:
   id: uart_bus
@@ -96,13 +139,23 @@ uart:
 stream_server:
   buffer_size: 1024
   uart_id: uart_bus
-#  id: ss
-  port: 6638 # optional, default is 6638
+  port: 6638
 
 binary_sensor:
   - platform: stream_server
     connected:
       name: "TubesZB ZW Serial Connected"
+
+sensor:
+  - platform: uptime
+    name: "Uptime"
+    update_interval: 60s
+
+  - platform: template
+    name: "Watchdog Reboot Count"
+    lambda: 'return id(watchdog_reboot_count);'
+    update_interval: 60s
+    entity_category: diagnostic
 
 mdns:
   services:
