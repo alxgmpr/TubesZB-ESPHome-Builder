@@ -27,12 +27,10 @@ esp32:
       CONFIG_UART_ISR_IN_IRAM: "y"
 
 external_components:
-  - source: github://tube0013/esphome-components@main
+  - source: github://tube0013/esphome-components
     components: [stream_server]
-    refresh: 0s
-  - source: github://tjhorner/esphome-custom-components@main
+  - source: github://tjhorner/esphome-custom-components
     components: [ project_version ]
-    refresh: 0s
 
 #dashboard_import:
 #  package_import_url: github://tube0013/tube_gateways/models/current/tubeszb-zw-kit/tubeszb-zw.yaml
