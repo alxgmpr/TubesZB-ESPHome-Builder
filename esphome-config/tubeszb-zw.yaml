@@ -27,10 +27,12 @@ esp32:
       CONFIG_UART_ISR_IN_IRAM: "y"
 
 external_components:
-  - source: github://tube0013/esphome-components
+  - source: github://tube0013/esphome-components@main
     components: [stream_server]
-  - source: github://tjhorner/esphome-custom-components
+    refresh: 0s
+  - source: github://tjhorner/esphome-custom-components@main
     components: [ project_version ]
+    refresh: 0s
 
 #dashboard_import:
 #  package_import_url: github://tube0013/tube_gateways/models/current/tubeszb-zw-kit/tubeszb-zw.yaml
@@ -48,9 +50,9 @@ ethernet:
   
     # Optional manual IP
   manual_ip:
-    static_ip: STATIC_IP
-    gateway: GATEWAY
-    subnet: SUBNET
+    static_ip: 10.1.2.8
+    gateway: 10.1.2.1
+    subnet: 255.255.255.0
 
 # Enable logging
 logger:
